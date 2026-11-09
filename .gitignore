@@ -2,6 +2,7 @@
 cookies.txt
 *.cookie
 *.cookies
+cookie_string.txt
 
 # Node & Wrangler
 node_modules/
