@@ -3,6 +3,7 @@ cookies.txt
 *.cookie
 *.cookies
 cookie_string.txt
+cookie_essential.txt
 
 # Node & Wrangler
 node_modules/
