@@ -8,7 +8,8 @@
 const DEFAULT_CONFIG = {
   API_KEY: "lily",
   SERVICE_NAME: "elite-cloudflare-resolver",
-  UPSTREAM_BACKEND: "" // Optional: URL to your VPS/backend (e.g., https://your-vps.com)
+  UPSTREAM_BACKEND: "", // Optional: URL to your VPS/backend (e.g., https://your-vps.com)
+  YOUTUBE_COOKIE: ""    // Optional: Cookie string for 100% age-restriction unlock
 };
 
 export default {
@@ -16,7 +17,8 @@ export default {
     const config = {
       API_KEY: env?.API_KEY || DEFAULT_CONFIG.API_KEY,
       SERVICE_NAME: env?.SERVICE_NAME || DEFAULT_CONFIG.SERVICE_NAME,
-      UPSTREAM_BACKEND: env?.UPSTREAM_BACKEND || DEFAULT_CONFIG.UPSTREAM_BACKEND
+      UPSTREAM_BACKEND: env?.UPSTREAM_BACKEND || DEFAULT_CONFIG.UPSTREAM_BACKEND,
+      YOUTUBE_COOKIE: env?.YOUTUBE_COOKIE || DEFAULT_CONFIG.YOUTUBE_COOKIE
     };
 
     const url = new URL(request.url);
@@ -207,7 +209,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
     }
 
     // Strategy 2: Multi-resolver fallback on Edge
-    const result = await resolveYouTubeMedia(videoId, format, origin);
+    const result = await resolveYouTubeMedia(videoId, format, origin, config);
 
     // Cache at Edge for 2 hours (7200 seconds)
     try {
@@ -300,7 +302,7 @@ function decodeBase64Url(base64) {
 /**
  * Core Resolver: Queries YouTube InnerTube / Piped / Invidious instances
  */
-async function resolveYouTubeMedia(videoId, format, origin) {
+async function resolveYouTubeMedia(videoId, format, origin, config) {
   let title = "YouTube Audio Track";
   let duration = 200;
   let rawStreamUrl = null;
@@ -390,13 +392,16 @@ async function resolveYouTubeMedia(videoId, format, origin) {
           racyCheckOk: true
         };
 
+        const reqHeaders = {
+          "Content-Type": "application/json",
+          "User-Agent": c.sdk ? "com.google.android.youtube/19.29.37 (Linux; U; Android 11; en_US) gzip" : "Mozilla/5.0",
+          ...(c.sdk ? { "X-YouTube-Client-Name": "3", "X-YouTube-Client-Version": c.version } : {}),
+          ...(config?.YOUTUBE_COOKIE ? { "Cookie": config.YOUTUBE_COOKIE } : {})
+        };
+
         const innerTubeResp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "User-Agent": c.sdk ? "com.google.android.youtube/19.29.37 (Linux; U; Android 11; en_US) gzip" : "Mozilla/5.0",
-            ...(c.sdk ? { "X-YouTube-Client-Name": "3", "X-YouTube-Client-Version": c.version } : {})
-          },
+          headers: reqHeaders,
           body: JSON.stringify(bodyPayload)
         });
 
