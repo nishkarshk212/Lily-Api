@@ -1,6 +1,12 @@
 # Lily-Api
 ### YouTube Fallback API & Stream Resolver
 
+Your live deployed API:
+```env
+"WORKER_FALLBACK_API_URL" "https://lily-api.nishkarshk46.workers.dev"
+"WORKER_FALLBACK_API_KEY" "lily"
+```
+
 A drop-in, 100% compatible replacement for:
 ```env
 "WORKER_FALLBACK_API_URL" "https://youtubenewapi.skybotsdeveloper.workers.dev"
@@ -78,8 +84,8 @@ docker run -d -p 8000:8000 -e API_KEY="itsmesid" youtube-fallback-api
 In your bot's `.env` configuration file, replace the old worker URL with your newly deployed worker URL:
 
 ```env
-WORKER_FALLBACK_API_URL="https://your-worker-name.your-account.workers.dev"
-WORKER_FALLBACK_API_KEY="itsmesid"
+WORKER_FALLBACK_API_URL="https://lily-api.nishkarshk46.workers.dev"
+WORKER_FALLBACK_API_KEY="lily"
 ```
 
 *(If you set a custom `API_KEY` in `wrangler.toml` or `.env`, make sure both match!)*
@@ -112,8 +118,8 @@ WORKER_FALLBACK_API_KEY="itsmesid"
 
 #### Example Request:
 ```bash
-curl -H "x-api-key: itsmesid" \
-  "https://your-worker.workers.dev/api?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=mp3"
+curl -H "x-api-key: lily" \
+  "https://lily-api.nishkarshk46.workers.dev/api?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=mp3"
 ```
 
 #### Example Response:

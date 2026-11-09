@@ -13,8 +13,8 @@ import json
 import urllib.request
 import urllib.error
 
-API_BASE_URL = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "http://127.0.0.1:8000"
-API_KEY = sys.argv[2] if len(sys.argv) > 2 else "itsmesid"
+API_BASE_URL = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://lily-api.nishkarshk46.workers.dev"
+API_KEY = sys.argv[2] if len(sys.argv) > 2 else "lily"
 
 TEST_VIDEO_ID = "dQw4w9WgXcQ"
 

@@ -6,7 +6,7 @@
 
 // Default Configuration (overridable via Worker Environment Variables)
 const DEFAULT_CONFIG = {
-  API_KEY: "itsmesid",
+  API_KEY: "lily",
   SERVICE_NAME: "elite-cloudflare-resolver",
   UPSTREAM_BACKEND: "" // Optional: URL to your VPS/backend (e.g., https://your-vps.com)
 };

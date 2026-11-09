@@ -1,9 +1,9 @@
-name = "youtubenewapi"
+name = "lily-api"
 main = "worker.js"
 compatibility_date = "2024-09-23"
 
 [vars]
-API_KEY = "itsmesid"
+API_KEY = "lily"
 SERVICE_NAME = "elite-cloudflare-resolver"
 UPSTREAM_BACKEND = ""
 

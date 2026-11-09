@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.getenv("API_KEY", "itsmesid")
+API_KEY = os.getenv("API_KEY", "lily")
 SERVICE_NAME = os.getenv("SERVICE_NAME", "elite-cloudflare-resolver")
 
 
