@@ -50,7 +50,7 @@ export default {
 
     // 3. YouTube Resolver API: /api
     if (path === "/api" || path === "/api/") {
-      return handleApiResolve(request, url, config, corsHeaders);
+      return handleApiResolve(request, url, config, corsHeaders, ctx);
     }
 
     // 404 Route Not Found
@@ -68,7 +68,7 @@ export default {
 /**
  * Handle YouTube URL resolution (/api)
  */
-async function handleApiResolve(request, url, config, corsHeaders) {
+async function handleApiResolve(request, url, config, corsHeaders, ctx) {
   // Check Authentication
   const authHeader = request.headers.get("x-api-key") || 
                      request.headers.get("X-API-KEY") || 
@@ -140,6 +140,20 @@ async function handleApiResolve(request, url, config, corsHeaders) {
   }
 
   const origin = `${url.protocol}//${url.host}`;
+  const cacheKey = new Request(`${origin}/__cache_api__/${videoId}/${format}`);
+  const cache = caches.default;
+
+  // Check Cloudflare Edge Cache for sub-20ms instant responses
+  try {
+    const cachedResp = await cache.match(cacheKey);
+    if (cachedResp) {
+      const cachedData = await cachedResp.json();
+      return jsonResponse(cachedData, 200, {
+        ...corsHeaders,
+        "X-Cache": "HIT"
+      });
+    }
+  } catch (_) {}
 
   try {
     // Strategy 1: Forward to custom Upstream Backend if configured
@@ -167,7 +181,25 @@ async function handleApiResolve(request, url, config, corsHeaders) {
 
     // Strategy 2: Multi-resolver fallback on Edge
     const result = await resolveYouTubeMedia(videoId, format, origin);
-    return jsonResponse(result, 200, corsHeaders);
+
+    // Cache at Edge for 2 hours (7200 seconds)
+    try {
+      const responseToCache = new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=7200"
+        }
+      });
+      if (ctx && ctx.waitUntil) {
+        ctx.waitUntil(cache.put(cacheKey, responseToCache));
+      }
+    } catch (_) {}
+
+    return jsonResponse(result, 200, {
+      ...corsHeaders,
+      "X-Cache": "MISS"
+    });
 
   } catch (error) {
     return jsonResponse({
