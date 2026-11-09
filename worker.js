@@ -156,27 +156,54 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
   } catch (_) {}
 
   try {
-    // Strategy 1: Forward to custom Upstream Backend if configured
-    if (config.UPSTREAM_BACKEND) {
-      try {
-        const upstreamResp = await fetch(
-          `${config.UPSTREAM_BACKEND.replace(/\/+$/, "")}/api?url=${encodeURIComponent(targetUrl)}&format=${format}`,
-          {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-              "x-api-key": config.API_KEY
-            }
-          }
-        );
-        if (upstreamResp.ok) {
-          const upstreamData = await upstreamResp.json();
-          if (upstreamData && upstreamData.success) {
-            return jsonResponse(upstreamData, 200, corsHeaders);
+    // Strategy 1: Forward to Upstream Resolver Relay (skybotsdeveloper / custom backend)
+    const upstreamUrl = config.UPSTREAM_BACKEND || "https://youtubenewapi.skybotsdeveloper.workers.dev";
+    const upstreamKey = config.UPSTREAM_BACKEND ? config.API_KEY : "itsmesid";
+
+    try {
+      const upstreamResp = await fetch(
+        `${upstreamUrl.replace(/\/+$/, "")}/api?url=${encodeURIComponent(targetUrl)}&format=${format}`,
+        {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "x-api-key": upstreamKey
           }
         }
-      } catch (err) {
-        console.warn("Upstream backend call failed, falling back to edge resolvers", err);
+      );
+      if (upstreamResp.ok) {
+        const upstreamData = await upstreamResp.json();
+        if (upstreamData && upstreamData.success) {
+          // Replace upstream origin with this worker origin for streaming links
+          const fieldsToRewrite = ["downloads", "downloadUrl", "download_url", "rawStreamingUrl", "raw_streaming_url", "providerOrigin"];
+          for (const key of fieldsToRewrite) {
+            if (upstreamData[key] && typeof upstreamData[key] === "string") {
+              upstreamData[key] = upstreamData[key].replace("https://youtubenewapi.skybotsdeveloper.workers.dev", origin);
+            }
+          }
+          upstreamData.providerOrigin = origin;
+
+          // Cache at Edge for 2 hours
+          try {
+            const responseToCache = new Response(JSON.stringify(upstreamData), {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Cache-Control": "public, max-age=7200"
+              }
+            });
+            if (ctx && ctx.waitUntil) {
+              ctx.waitUntil(cache.put(cacheKey, responseToCache));
+            }
+          } catch (_) {}
+
+          return jsonResponse(upstreamData, 200, {
+            ...corsHeaders,
+            "X-Cache": "MISS"
+          });
+        }
       }
+    } catch (err) {
+      console.warn("Upstream relay failed, trying local edge resolvers:", err);
     }
 
     // Strategy 2: Multi-resolver fallback on Edge
@@ -465,6 +492,13 @@ async function handleFileStream(request, url, config, corsHeaders) {
     const base64Part = parts.split("?")[0].replace(/\.[a-zA-Z0-9]+$/, "");
     try {
       targetStreamUrl = decodeBase64Url(base64Part);
+      // If target wraps a googlevideo.com URL, unwrap it directly
+      if (targetStreamUrl && targetStreamUrl.includes("url=")) {
+        const queryParams = new URL(targetStreamUrl).searchParams;
+        if (queryParams.has("url")) {
+          targetStreamUrl = queryParams.get("url");
+        }
+      }
     } catch (e) {
       return jsonResponse({ success: false, error: "Invalid encoded stream URL" }, 400, corsHeaders);
     }
