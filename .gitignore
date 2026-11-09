@@ -1,0 +1,14 @@
+# Node & Wrangler
+node_modules/
+.wrangler/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# OS
+.DS_Store
