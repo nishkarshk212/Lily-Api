@@ -1,3 +1,8 @@
+# Sensitive Credentials & Cookies
+cookies.txt
+*.cookie
+*.cookies
+
 # Node & Wrangler
 node_modules/
 .wrangler/
