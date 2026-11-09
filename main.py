@@ -169,14 +169,25 @@ async def resolve_media(
     try:
         import yt_dlp
 
+        cookie_file = "cookies.txt" if os.path.exists("cookies.txt") else None
+
         ydl_opts = {
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
+            "age_limit": None,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "tvhtml5", "web"],
+                    "player_skip": ["webpage", "configs"],
+                }
+            },
             "format": "bestaudio[ext=m4a]/bestaudio/best"
             if format == "mp3"
             else "best[ext=mp4]/best",
         }
+        if cookie_file:
+            ydl_opts["cookiefile"] = cookie_file
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
             title = info.get("title", title)
@@ -268,6 +279,10 @@ async def resolve_media(
         "download_url": proxy_url,
         "rawStreamingUrl": proxy_url,
         "raw_streaming_url": proxy_url,
+        "directStreamUrl": raw_stream_url,
+        "direct_stream_url": raw_stream_url,
+        "directDownloadUrl": f"{proxy_url}&redirect=1",
+        "direct_download_url": f"{proxy_url}&redirect=1",
         "mimeType": mime_type,
         "streamMimeType": mime_type,
         "stream_mime_type": mime_type,
@@ -302,6 +317,14 @@ async def stream_media(request: Request, encoded_path: Optional[str] = None):
 
     if not target_url:
         raise HTTPException(status_code=400, detail="Target stream URL missing")
+
+    # Fast 302 direct redirect for maximum download speeds
+    if request.query_params.get("redirect") == "1" or request.query_params.get("direct") == "1":
+        from fastapi.responses import RedirectResponse
+        redirect_url = target_url
+        if "ratebypass=" not in redirect_url:
+            redirect_url += ("&" if "?" in redirect_url else "?") + "ratebypass=yes"
+        return RedirectResponse(url=redirect_url, status_code=302)
 
     range_header = request.headers.get("range")
     req_headers = {"User-Agent": "Mozilla/5.0"}

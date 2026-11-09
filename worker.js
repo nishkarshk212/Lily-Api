@@ -357,57 +357,78 @@ async function resolveYouTubeMedia(videoId, format, origin) {
     } catch (_) {}
   }
 
-  // 3. Fallback: YouTube InnerTube Android/iOS client
+  // 3. Fallback: YouTube InnerTube TV / Android client with Age-Restriction Bypass
   if (!rawStreamUrl) {
-    try {
-      const innerTubeResp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "com.google.android.youtube/19.29.37 (Linux; U; Android 11; en_US) gzip",
-          "X-YouTube-Client-Name": "3",
-          "X-YouTube-Client-Version": "19.29.37"
-        },
-        body: JSON.stringify({
+    const clientsToTry = [
+      {
+        name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+        version: "2.0",
+        embed: true
+      },
+      {
+        name: "ANDROID",
+        version: "19.29.37",
+        sdk: 30
+      }
+    ];
+
+    for (const c of clientsToTry) {
+      try {
+        const bodyPayload = {
           context: {
             client: {
-              clientName: "ANDROID",
-              clientVersion: "19.29.37",
-              androidSdkVersion: 30,
+              clientName: c.name,
+              clientVersion: c.version,
               hl: "en",
-              gl: "US"
-            }
+              gl: "US",
+              ...(c.sdk ? { androidSdkVersion: c.sdk } : {})
+            },
+            ...(c.embed ? { thirdParty: { embedUrl: `https://www.youtube.com/embed/${videoId}` } } : {})
           },
-          videoId: videoId
-        })
-      });
+          videoId: videoId,
+          contentCheckOk: true,
+          racyCheckOk: true
+        };
 
-      if (innerTubeResp.ok) {
-        const ytData = await innerTubeResp.json();
-        if (ytData.videoDetails?.title) title = ytData.videoDetails.title;
-        if (ytData.videoDetails?.lengthSeconds) duration = parseInt(ytData.videoDetails.lengthSeconds, 10);
+        const innerTubeResp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "User-Agent": c.sdk ? "com.google.android.youtube/19.29.37 (Linux; U; Android 11; en_US) gzip" : "Mozilla/5.0",
+            ...(c.sdk ? { "X-YouTube-Client-Name": "3", "X-YouTube-Client-Version": c.version } : {})
+          },
+          body: JSON.stringify(bodyPayload)
+        });
 
-        const formats = ytData.streamingData?.adaptiveFormats || [];
-        if (format === "mp4") {
-          const videoFmt = formats.find(f => f.mimeType && f.mimeType.includes("video/mp4") && f.url);
-          if (videoFmt) {
-            rawStreamUrl = videoFmt.url;
-            mimeType = "video/mp4";
-            fileExtension = "mp4";
-            fileSize = parseInt(videoFmt.contentLength || (duration * 120000), 10);
-          }
-        } else {
-          const audioFmt = formats.find(f => f.mimeType && f.mimeType.includes("audio/mp4") && f.url) ||
-                           formats.find(f => f.mimeType && f.mimeType.includes("audio") && f.url);
-          if (audioFmt) {
-            rawStreamUrl = audioFmt.url;
-            mimeType = audioFmt.mimeType.split(";")[0];
-            fileExtension = "m4a";
-            fileSize = parseInt(audioFmt.contentLength || (duration * 16000), 10);
+        if (innerTubeResp.ok) {
+          const ytData = await innerTubeResp.json();
+          if (ytData.videoDetails?.title) title = ytData.videoDetails.title;
+          if (ytData.videoDetails?.lengthSeconds) duration = parseInt(ytData.videoDetails.lengthSeconds, 10);
+
+          const formats = ytData.streamingData?.adaptiveFormats || ytData.streamingData?.formats || [];
+          if (format === "mp4") {
+            const videoFmt = formats.find(f => f.mimeType && f.mimeType.includes("video/mp4") && f.url);
+            if (videoFmt) {
+              rawStreamUrl = videoFmt.url;
+              mimeType = "video/mp4";
+              fileExtension = "mp4";
+              fileSize = parseInt(videoFmt.contentLength || (duration * 120000), 10);
+              break;
+            }
+          } else {
+            const audioFmt = formats.find(f => f.mimeType && f.mimeType.includes("audio/mp4") && f.url) ||
+                             formats.find(f => f.mimeType && f.mimeType.includes("audio") && f.url);
+            if (audioFmt) {
+              rawStreamUrl = audioFmt.url;
+              mimeType = audioFmt.mimeType.split(";")[0];
+              fileExtension = "m4a";
+              fileSize = parseInt(audioFmt.contentLength || (duration * 16000), 10);
+              break;
+            }
           }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
   }
 
   // 4. Fallback: Cobalt API instance
@@ -463,6 +484,10 @@ async function resolveYouTubeMedia(videoId, format, origin) {
     download_url: proxyDownloadUrl,
     rawStreamingUrl: proxyDownloadUrl,
     raw_streaming_url: proxyDownloadUrl,
+    directStreamUrl: rawStreamUrl,
+    direct_stream_url: rawStreamUrl,
+    directDownloadUrl: `${proxyDownloadUrl}&redirect=1`,
+    direct_download_url: `${proxyDownloadUrl}&redirect=1`,
     mimeType: mimeType,
     streamMimeType: mimeType,
     stream_mime_type: mimeType,
@@ -506,6 +531,16 @@ async function handleFileStream(request, url, config, corsHeaders) {
 
   if (!targetStreamUrl) {
     return jsonResponse({ success: false, error: "Stream URL is required" }, 400, corsHeaders);
+  }
+
+  // Blazing Fast Speed Optimization: 302 Direct Redirect bypasses proxy latency entirely
+  if (url.searchParams.get("redirect") === "1" || url.searchParams.get("direct") === "1") {
+    // Append ratebypass=yes if not present to ensure Google CDN gives 100+ Mbps wire speed
+    let redirectUrl = targetStreamUrl;
+    if (!redirectUrl.includes("ratebypass=")) {
+      redirectUrl += (redirectUrl.includes("?") ? "&" : "?") + "ratebypass=yes";
+    }
+    return Response.redirect(redirectUrl, 302);
   }
 
   // Forward Range header if requested by client (crucial for music streaming seeking)
