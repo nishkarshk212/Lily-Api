@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENV PORT=8000
-ENV API_KEY="itsmesid"
+ENV API_KEY=""
 
 EXPOSE 8000
 

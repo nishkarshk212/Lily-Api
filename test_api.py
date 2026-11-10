@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
 """
-Test script to verify YouTube Fallback API & Resolver.
+Test script to verify Lily-Api YouTube Fallback API & Stream Resolver.
 Usage:
     python3 test_api.py [API_BASE_URL] [API_KEY]
 
-Default API_BASE_URL: http://127.0.0.1:8000
-Default API_KEY: itsmesid
+Example:
+    python3 test_api.py https://your-worker.your-subdomain.workers.dev your_secret_key
 """
 
+import os
 import sys
 import json
 import urllib.request
 import urllib.error
 
-API_BASE_URL = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://lily-api.nishkarshk46.workers.dev"
-API_KEY = sys.argv[2] if len(sys.argv) > 2 else "lily"
+API_BASE_URL = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+API_KEY = sys.argv[2] if len(sys.argv) > 2 else os.getenv("API_KEY", "your_secret_api_key_here")
 
 TEST_VIDEO_ID = "dQw4w9WgXcQ"
+MASKED_KEY = f"{API_KEY[:2]}***" if len(API_KEY) > 2 else "***"
 
 print(f"==================================================")
-print(f" Testing YouTube Fallback API: {API_BASE_URL}")
-print(f" API Key: {API_KEY}")
+print(f" Testing Lily-Api: {API_BASE_URL}")
+print(f" API Key: {MASKED_KEY}")
 print(f"==================================================\n")
 
 
 def make_request(path, headers=None, expect_status=200):
     url = f"{API_BASE_URL}{path}"
-    req = urllib.request.Request(url, headers=headers or {})
+    req_headers = {"User-Agent": "Mozilla/5.0", **(headers or {})}
+    req = urllib.request.Request(url, headers=req_headers)
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = resp.read()
@@ -89,7 +92,7 @@ if status == 200 and body and body.get("success"):
     print("\n[5/5] Testing Stream Proxy with Byte Range (206 Partial Content)...")
     stream_url = body.get("downloads")
     if stream_url:
-        req = urllib.request.Request(stream_url, headers={"Range": "bytes=0-1024"})
+        req = urllib.request.Request(stream_url, headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-1024"})
         try:
             with urllib.request.urlopen(req, timeout=10) as s_resp:
                 if s_resp.status in (200, 206):

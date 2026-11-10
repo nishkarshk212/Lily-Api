@@ -3,7 +3,10 @@ main = "worker.js"
 compatibility_date = "2024-09-23"
 
 [vars]
-API_KEY = "lily"
-SERVICE_NAME = "elite-cloudflare-resolver"
-UPSTREAM_BACKEND = ""
+SERVICE_NAME = "lily-api-resolver"
 
+# Store sensitive configuration securely as Cloudflare Secrets:
+#   npx wrangler secret put API_KEY
+#   npx wrangler secret put UPSTREAM_BACKEND
+#   npx wrangler secret put UPSTREAM_API_KEY
+#   npx wrangler secret put YOUTUBE_COOKIE

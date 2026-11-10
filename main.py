@@ -20,8 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.getenv("API_KEY", "lily")
-SERVICE_NAME = os.getenv("SERVICE_NAME", "elite-cloudflare-resolver")
+API_KEY = os.getenv("API_KEY", "")
+SERVICE_NAME = os.getenv("SERVICE_NAME", "lily-api-resolver")
 
 
 def extract_video_id(url_or_id: str) -> Optional[str]:
@@ -65,7 +65,7 @@ def decode_b64(b64_text: str) -> str:
 @app.get("/")
 @app.head("/")
 async def health_check():
-    """Health check endpoint matching elite-cloudflare-resolver"""
+    """Health check endpoint"""
     return {
         "success": True,
         "service": SERVICE_NAME,
@@ -90,7 +90,7 @@ async def resolve_media(
     )
     client_key = x_api_key or bearer or api_key
 
-    if not client_key or client_key != API_KEY:
+    if not API_KEY or not client_key or client_key != API_KEY:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={
@@ -261,7 +261,7 @@ async def resolve_media(
             },
         )
 
-    # 6. Build response matching exact skybotsdeveloper worker format
+    # 6. Build standardized media stream response
     encoded_stream = encode_b64(raw_stream_url)
     proxy_url = f"{base_url}/api/file/vps/{encoded_stream}.{file_ext}?videoId={video_id}&filename=youtube.{file_ext}"
 

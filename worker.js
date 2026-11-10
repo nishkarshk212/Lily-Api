@@ -1,15 +1,15 @@
 /**
- * Cloudflare Worker: YouTube Fallback API & Stream Resolver
- * Replaces: https://youtubenewapi.skybotsdeveloper.workers.dev
- * Default API Key: itsmesid
+ * Lily-Api: Cloudflare Worker YouTube Fallback API & Stream Resolver
+ * Configure sensitive credentials securely via Worker Secrets / Environment Variables.
  */
 
-// Default Configuration (overridable via Worker Environment Variables)
+// Default Configuration (Set real values via Cloudflare Secrets / env)
 const DEFAULT_CONFIG = {
-  API_KEY: "lily",
-  SERVICE_NAME: "elite-cloudflare-resolver",
-  UPSTREAM_BACKEND: "", // Optional: URL to your VPS/backend (e.g., https://your-vps.com)
-  YOUTUBE_COOKIE: ""    // Optional: Cookie string for 100% age-restriction unlock
+  API_KEY: "",
+  SERVICE_NAME: "lily-api-resolver",
+  UPSTREAM_BACKEND: "",
+  UPSTREAM_API_KEY: "",
+  YOUTUBE_COOKIE: ""
 };
 
 export default {
@@ -18,6 +18,7 @@ export default {
       API_KEY: env?.API_KEY || DEFAULT_CONFIG.API_KEY,
       SERVICE_NAME: env?.SERVICE_NAME || DEFAULT_CONFIG.SERVICE_NAME,
       UPSTREAM_BACKEND: env?.UPSTREAM_BACKEND || DEFAULT_CONFIG.UPSTREAM_BACKEND,
+      UPSTREAM_API_KEY: env?.UPSTREAM_API_KEY || DEFAULT_CONFIG.UPSTREAM_API_KEY,
       YOUTUBE_COOKIE: env?.YOUTUBE_COOKIE || DEFAULT_CONFIG.YOUTUBE_COOKIE
     };
 
@@ -80,7 +81,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
 
   const providedKey = authHeader || bearerToken || queryKey;
 
-  if (!providedKey || providedKey !== config.API_KEY) {
+  if (!config.API_KEY || !providedKey || providedKey !== config.API_KEY) {
     return jsonResponse({
       success: false,
       error: {
@@ -158,54 +159,63 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
   } catch (_) {}
 
   try {
-    // Strategy 1: Forward to Upstream Resolver Relay (skybotsdeveloper / custom backend)
-    const upstreamUrl = config.UPSTREAM_BACKEND || "https://youtubenewapi.skybotsdeveloper.workers.dev";
-    const upstreamKey = config.UPSTREAM_BACKEND ? config.API_KEY : "itsmesid";
+    // Strategy 1: Forward to configured Upstream Resolver Backend if set
+    if (config.UPSTREAM_BACKEND) {
+      try {
+        const cleanUpstream = config.UPSTREAM_BACKEND.replace(/\/+$/, "");
+        const upstreamOrigin = new URL(cleanUpstream).origin;
+        const upstreamKey = config.UPSTREAM_API_KEY || config.API_KEY;
 
-    try {
-      const upstreamResp = await fetch(
-        `${upstreamUrl.replace(/\/+$/, "")}/api?url=${encodeURIComponent(targetUrl)}&format=${format}`,
-        {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "x-api-key": upstreamKey
-          }
-        }
-      );
-      if (upstreamResp.ok) {
-        const upstreamData = await upstreamResp.json();
-        if (upstreamData && upstreamData.success) {
-          // Replace upstream origin with this worker origin for streaming links
-          const fieldsToRewrite = ["downloads", "downloadUrl", "download_url", "rawStreamingUrl", "raw_streaming_url", "providerOrigin"];
-          for (const key of fieldsToRewrite) {
-            if (upstreamData[key] && typeof upstreamData[key] === "string") {
-              upstreamData[key] = upstreamData[key].replace("https://youtubenewapi.skybotsdeveloper.workers.dev", origin);
+        const upstreamResp = await fetch(
+          `${cleanUpstream}/api?url=${encodeURIComponent(targetUrl)}&format=${format}`,
+          {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+              "x-api-key": upstreamKey
             }
           }
-          upstreamData.providerOrigin = origin;
-
-          // Cache at Edge for 2 hours
-          try {
-            const responseToCache = new Response(JSON.stringify(upstreamData), {
-              status: 200,
-              headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Cache-Control": "public, max-age=7200"
+        );
+        if (upstreamResp.ok) {
+          const upstreamData = await upstreamResp.json();
+          if (upstreamData && upstreamData.success) {
+            // Rewrite upstream origin to this worker's origin for streaming links
+            const fieldsToRewrite = ["downloads", "downloadUrl", "download_url", "rawStreamingUrl", "raw_streaming_url", "providerOrigin"];
+            for (const key of fieldsToRewrite) {
+              if (upstreamData[key] && typeof upstreamData[key] === "string") {
+                upstreamData[key] = upstreamData[key].replace(upstreamOrigin, origin);
               }
-            });
-            if (ctx && ctx.waitUntil) {
-              ctx.waitUntil(cache.put(cacheKey, responseToCache));
             }
-          } catch (_) {}
+            upstreamData.providerOrigin = origin;
 
-          return jsonResponse(upstreamData, 200, {
-            ...corsHeaders,
-            "X-Cache": "MISS"
-          });
+            if (upstreamData.downloads && !upstreamData.directDownloadUrl) {
+              const sep = upstreamData.downloads.includes("?") ? "&" : "?";
+              upstreamData.directDownloadUrl = `${upstreamData.downloads}${sep}redirect=1`;
+              upstreamData.direct_download_url = upstreamData.directDownloadUrl;
+            }
+
+            // Cache at Edge for 2 hours
+            try {
+              const responseToCache = new Response(JSON.stringify(upstreamData), {
+                status: 200,
+                headers: {
+                  "Content-Type": "application/json; charset=utf-8",
+                  "Cache-Control": "public, max-age=7200"
+                }
+              });
+              if (ctx && ctx.waitUntil) {
+                ctx.waitUntil(cache.put(cacheKey, responseToCache));
+              }
+            } catch (_) {}
+
+            return jsonResponse(upstreamData, 200, {
+              ...corsHeaders,
+              "X-Cache": "MISS"
+            });
+          }
         }
+      } catch (err) {
+        console.warn("Upstream relay failed, trying local edge resolvers:", err);
       }
-    } catch (err) {
-      console.warn("Upstream relay failed, trying local edge resolvers:", err);
     }
 
     // Strategy 2: Multi-resolver fallback on Edge
