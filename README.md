@@ -1,32 +1,43 @@
 <div align="center">
 
-<!-- Animated Typing Header -->
+<!-- Animated Gradient Wave Hero Banner -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF2E93,50:9D4EDD,100:26A5E4&height=210&section=header&text=%F0%9F%8C%B8%20Lily-Api&fontSize=68&fontColor=ffffff&fontAlignY=38&desc=Ultra-Fast%20Edge%20YouTube%20Audio%20%26%20Video%20Stream%20Resolver&descSize=18&descAlignY=62&animation=fadeIn" width="100%" alt="Lily-Api Banner" />
+
+<!-- Animated Typing Tagline -->
 <a href="https://t.me/advaydev">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=FF2E93&center=true&vCenter=true&multiline=true&width=700&height=100&lines=%F0%9F%8C%B8+Lily-Api+%7C+Fastest+Stream+Resolver;Blazing-Fast+Edge+YouTube+Audio+%26+Video+API" alt="Lily-Api Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=2600&pause=900&color=FF2E93&center=true&vCenter=true&width=720&lines=%E2%9A%A1+Sub-20ms+Cloudflare+Edge+Caching;%F0%9F%9A%80+100%2B+MB%2Fs+Direct+CDN+302+Downloads;%F0%9F%94%9E+Age-Restricted+Media+Unlock+Ready;%F0%9F%8E%A7+HTTP+206+Range+Streaming+for+Music+Bots" alt="Lily-Api Features" />
 </a>
 
-<p align="center">
-  <b>Ultra-fast, edge-cached YouTube audio & video extraction API built for Telegram Music Bots, media players, and high-speed downloaders.</b>
-</p>
+<br/>
 
-<!-- Colorful Shields.io Badges -->
+<!-- Colorful Status & Tech Badges -->
 <p align="center">
   <a href="https://t.me/advaydev">
     <img src="https://img.shields.io/badge/Owner-@advaydev-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Owner Telegram" />
   </a>
   <img src="https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  <img src="https://img.shields.io/badge/Speed-100%2B%20MB%2Fs-00E676?style=for-the-badge&logo=speedtest&logoColor=black" alt="Speed" />
-  <img src="https://img.shields.io/badge/Edge%20Cache-%3C20ms-9D4EDD?style=for-the-badge&logo=lightning&logoColor=white" alt="Latency" />
+  <img src="https://img.shields.io/badge/Python-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Speed-100%2B%20MB%2Fs-00E676?style=for-the-badge&logo=speedtest&logoColor=black" alt="100+ MB/s" />
+  <img src="https://img.shields.io/badge/Edge%20Cache-%3C20ms-9D4EDD?style=for-the-badge&logo=lightning&logoColor=white" alt="<20ms Latency" />
 </p>
 
+<!-- One-Click Cloudflare Deploy Button -->
 <p align="center">
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-quick-deploy">Quick Deploy</a> •
-  <a href="#-speed--performance">Speed Benchmarks</a> •
-  <a href="#-api-playground">API Docs</a> •
-  <a href="https://t.me/advaydev">Contact Owner</a>
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/nishkarshk212/Lily-Api">
+    <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare Workers" height="36" />
+  </a>
+</p>
+
+<!-- Interactive Quick-Jump Navigation Pills -->
+<p align="center">
+  <a href="#-how-lily-api-works"><img src="https://img.shields.io/badge/🧭_Architecture-6C63FF?style=flat-square" /></a>
+  <a href="#-speed--benchmarks"><img src="https://img.shields.io/badge/⚡_Speed_Benchmarks-00C853?style=flat-square" /></a>
+  <a href="#-quick-deploy-guide"><img src="https://img.shields.io/badge/🚀_Quick_Deploy-FF6D00?style=flat-square" /></a>
+  <a href="#-lily-api-bot-configuration"><img src="https://img.shields.io/badge/🤖_Bot_Config-E91E63?style=flat-square" /></a>
+  <a href="#-interactive-api-playground"><img src="https://img.shields.io/badge/📡_API_Playground-00B0FF?style=flat-square" /></a>
+  <a href="#-faq--troubleshooting"><img src="https://img.shields.io/badge/❓_FAQ-AA00FF?style=flat-square" /></a>
+  <a href="https://t.me/advaydev"><img src="https://img.shields.io/badge/💬_t.me%2Fadvaydev-26A5E4?style=flat-square" /></a>
 </p>
 
 </div>
@@ -34,208 +45,308 @@
 ---
 
 > [!IMPORTANT]
-> **Security First:** Never hardcode real API keys, worker URLs, or personal cookies inside source files. Always configure `API_KEY`, `UPSTREAM_BACKEND`, `UPSTREAM_API_KEY`, and `YOUTUBE_COOKIE` using **Cloudflare Secrets** or environment variables (`.env`).
+> **Keep Your Instance Private:** Replace the example URL (`https://lily-api.example.workers.dev`) and example key (`lily_api_key_example`) with your own deployed endpoint and secret token. Never commit real keys or `cookies.txt` to public repositories.
 
 ---
 
-## ✨ Key Highlights
+## ✨ Why Choose Lily-Api?
 
 <table>
   <tr>
-    <td width="50%">
-      <h3>⚡ Sub-20ms Edge Caching</h3>
-      Repeated track lookups are served straight from Cloudflare's global edge cache in under <b>20 milliseconds</b> across 300+ locations.
+    <td align="center" width="25%">
+      <h3>⚡ &lt;20ms Cache</h3>
+      Edge-cached lookups respond almost instantly across 300+ Cloudflare nodes.
     </td>
-    <td width="50%">
-      <h3>🚀 100+ MB/s Direct 302 Mode</h3>
-      Append <code>&redirect=1</code> (or use <code>directDownloadUrl</code>) to stream directly from CDN servers with <code>ratebypass=yes</code>.
+    <td align="center" width="25%">
+      <h3>🚀 100+ MB/s CDN</h3>
+      <code>&redirect=1</code> bypasses proxy hops for direct unthrottled Google CDN speeds.
     </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🔞 Age-Restricted Unlock</h3>
-      Supports TV/Android embedded InnerTube clients plus encrypted <code>YOUTUBE_COOKIE</code> / <code>cookies.txt</code> session authentication.
+    <td align="center" width="25%">
+      <h3>🔞 Age Unlock</h3>
+      Supports embedded TV/Android clients + encrypted <code>YOUTUBE_COOKIE</code> secrets.
     </td>
-    <td width="50%">
-      <h3>🎧 HTTP 206 Range Streaming</h3>
-      Full byte-range proxy support allows Telegram voice chats and players to start playback in <b>0.2s</b> with instant seeking.
+    <td align="center" width="25%">
+      <h3>🎧 206 Seeking</h3>
+      Instant byte-range streaming lets Telegram voice chats start playing in <b>0.2s</b>.
     </td>
   </tr>
 </table>
 
 ---
 
-## 🧭 Architecture
+## 🧭 How Lily-Api Works
 
 ```mermaid
-flowchart LR
-    Bot["🤖 Music Bot / Client"] -->|x-api-key| Edge{"⚡ Cloudflare Edge"}
-    Edge -->|Cache HIT <20ms| Bot
-    Edge -->|Cache MISS| Resolver["🔎 Multi-Engine Resolver"]
-    Resolver -->|Option 1| Upstream["🌐 Configured Upstream"]
-    Resolver -->|Option 2| EdgeClients["📺 InnerTube / Piped + Cookie"]
-    EdgeClients --> Response["📦 Stream & Proxy Links"]
-    Response -->|Proxied Mode| Proxy["🛡️ /api/file/vps/... (206 Range)"]
-    Response -->|Direct Mode &redirect=1| CDN["🚀 Direct CDN (100+ MB/s)"]
+sequenceDiagram
+    autonumber
+    participant Bot as 🤖 Telegram Bot / App
+    participant Edge as ⚡ Lily-Api Worker
+    participant Cache as 💾 Cloudflare Edge Cache
+    participant Upstream as 🌐 Upstream / InnerTube + Cookie
+    participant CDN as 🚀 Media CDN
+
+    Bot->>Edge: GET /api?url=dQw4w9WgXcQ (x-api-key)
+    Edge->>Cache: Lookup videoId + format
+    alt Cache HIT (< 20ms)
+        Cache-->>Edge: Cached Metadata & Stream URLs
+        Edge-->>Bot: 200 OK (X-Cache: HIT)
+    else Cache MISS
+        Edge->>Upstream: Resolve Stream + ratebypass=yes
+        Upstream-->>Edge: Stream Metadata & Direct URL
+        Edge->>Cache: Store for 2 hours (TTL 7200s)
+        Edge-->>Bot: 200 OK (X-Cache: MISS)
+    end
+    Bot->>CDN: Download via directDownloadUrl (&redirect=1)
+    CDN-->>Bot: Stream at 40–100+ MB/s (HTTP 206 Range)
 ```
 
 ---
 
-## ⚡ Speed & Performance
+## ⚡ Speed & Benchmarks
 
-| Delivery Mode | Average Speed | 4 MB Audio Track | 100 MB Video File |
-| :--- | :---: | :---: | :---: |
-| 🚀 **Direct CDN Redirect** (`&redirect=1`) | **40 – 100+ MB/s** | `~0.2s` | `~1 – 3s` *(on VPS / Fast WiFi)* |
-| 🛡️ **Edge Proxied Stream** (`downloads`) | **5 – 10 MB/s** | `~0.6s` | `~12 – 18s` |
-| ⚡ **Cached Lookup** (`X-Cache: HIT`) | **< 20ms latency** | Instant metadata | Instant metadata |
+| Delivery Mode | Avg Transfer Speed | 4 MB Audio (`mp3/m4a`) | 100 MB Video (`mp4`) | Best Use Case |
+| :--- | :---: | :---: | :---: | :--- |
+| 🚀 **Direct Redirect** (`directDownloadUrl`) | **40 – 100+ MB/s** | `~0.2s` | `~1 – 3s` *(VPS / Fast WiFi)* | Fastest file downloads |
+| 🛡️ **Edge Proxied** (`downloads`) | **5 – 10 MB/s** | `~0.6s` | `~12 – 18s` | IP-masked bot streaming |
+| ⚡ **Edge Cache HIT** (`X-Cache: HIT`) | **< 20 ms** | Instant URL | Instant URL | Popular / repeated tracks |
 
 ---
 
-## 🚀 Quick Deploy
+## 🤖 Lily-Api Bot Configuration
 
-Click any deployment method below to expand interactive step-by-step instructions:
+Use **Lily-Api** as your drop-in fallback resolver in any Telegram Music Bot (e.g., **VivaanXmusic**, **AnonXMusic**, **YukkiMusic**):
+
+```env
+# Example Lily-Api configuration (replace with your own deployed URL & key)
+WORKER_FALLBACK_API_URL="https://lily-api.example.workers.dev"
+WORKER_FALLBACK_API_KEY="lily_api_key_example"
+```
 
 <details>
+<summary><b>🧩 Alternative Environment Variable Naming (<code>LILY_API_URL</code> / <code>LILY_API_KEY</code>)</b></summary>
+
+If your custom project uses Lily-specific variable names:
+
+```env
+LILY_API_URL="https://lily-api.example.workers.dev"
+LILY_API_KEY="lily_api_key_example"
+```
+
+</details>
+
+---
+
+## 🚀 Quick Deploy Guide
+
+Choose a deployment option below and click to expand the checklist:
+
+<details open>
 <summary><b>🟠 Option 1: Deploy to Cloudflare Workers via CLI (Recommended)</b></summary>
 
-1. **Install dependencies & authenticate Wrangler:**
-   ```bash
-   npm install
-   npx wrangler login
-   ```
-2. **Store your secrets securely on Cloudflare (never committed to Git):**
-   ```bash
-   npx wrangler secret put API_KEY
-   # Optional: Unlock 100% of age-restricted videos
-   npx wrangler secret put YOUTUBE_COOKIE
-   # Optional: Custom upstream backend relay
-   npx wrangler secret put UPSTREAM_BACKEND
-   npx wrangler secret put UPSTREAM_API_KEY
-   ```
-3. **Deploy globally in seconds:**
-   ```bash
-   npx wrangler deploy
-   ```
+- [x] **1. Clone & install Wrangler**
+  ```bash
+  git clone https://github.com/nishkarshk212/Lily-Api.git
+  cd Lily-Api
+  npm install
+  npx wrangler login
+  ```
+- [x] **2. Set your private API key & secrets securely on Cloudflare**
+  ```bash
+  npx wrangler secret put API_KEY
+  # Optional: Unlock 18+ age-restricted videos
+  npx wrangler secret put YOUTUBE_COOKIE
+  # Optional: Custom upstream relay
+  npx wrangler secret put UPSTREAM_BACKEND
+  npx wrangler secret put UPSTREAM_API_KEY
+  ```
+- [x] **3. Deploy to Cloudflare's global edge**
+  ```bash
+  npx wrangler deploy
+  ```
 
 </details>
 
 <details>
-<summary><b>🌐 Option 2: Deploy via Cloudflare Dashboard (No Terminal Needed)</b></summary>
+<summary><b>🌐 Option 2: Deploy in Browser via Cloudflare Dashboard</b></summary>
 
-1. Log into the [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create Worker**.
-2. Name your worker and click **Deploy**, then click **Edit Code**.
+1. Open the [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create Worker**.
+2. Name your worker (e.g. `lily-api`) and click **Deploy** → **Edit Code**.
 3. Copy the code from [`worker.js`](worker.js), paste it in, and click **Deploy**.
 4. Go to **Settings** → **Variables and Secrets** and add:
-   - `API_KEY`: *Your chosen secret token*
-   - `YOUTUBE_COOKIE`: *(Optional) Single-line cookie header string*
+   - `API_KEY` → Your chosen secret API key
+   - `YOUTUBE_COOKIE` → *(Optional)* Single-line cookie header for age-restricted tracks
 
 </details>
 
 <details>
-<summary><b>🐍 Option 3: Self-Host with Python FastAPI or Docker</b></summary>
+<summary><b>🐍 Option 3: Self-Host on VPS / Docker (Python FastAPI + yt-dlp)</b></summary>
 
-#### Local Python Setup
+#### Run Locally
 ```bash
 cp .env.example .env
-# Edit .env and set your private API_KEY
+# Edit .env and set API_KEY=your_secret_key
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 python3 main.py
 ```
 
-#### Docker Setup
+#### Run with Docker
 ```bash
 docker build -t lily-api .
-docker run -d -p 8000:8000 -e API_KEY="your_secret_key" lily-api
+docker run -d -p 8000:8000 -e API_KEY="lily_api_key_example" lily-api
 ```
 
 </details>
 
 ---
 
-## 🤖 Bot Integration (`.env`)
+## 📡 Interactive API Playground
 
-Configure your Telegram music bot with **your own deployed worker URL** and **secret key**:
+### Endpoints Overview
 
-```env
-WORKER_FALLBACK_API_URL="https://your-worker.your-subdomain.workers.dev"
-WORKER_FALLBACK_API_KEY="your_secret_api_key_here"
-```
+| Method | Endpoint | Auth Required | Purpose |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/` | No | Health & status check |
+| `GET` / `POST` | `/api?url=<id_or_url>&format=mp3` | Yes | Extract metadata, direct CDN & proxy stream URLs |
+| `GET` | `/api/file/vps/<token>.<ext>` | No | HTTP 206 byte-range stream proxy (add `&redirect=1` for 302 CDN redirect) |
 
 ---
 
-## 📖 API Playground
+### Interactive Code Examples (Multi-Language)
 
 <details open>
-<summary><b>1. Health Check — <code>GET /</code></b></summary>
+<summary><b>💻 cURL (Terminal Quick Test)</b></summary>
 
 ```bash
-curl -s "https://your-worker.your-subdomain.workers.dev/"
-```
+# 1. Health Check
+curl -s "https://lily-api.example.workers.dev/"
 
-```json
-{
-  "success": true,
-  "service": "lily-api-resolver",
-  "status": "online"
-}
+# 2. Resolve MP3 Audio Stream
+curl -s -H "x-api-key: lily_api_key_example" \
+  "https://lily-api.example.workers.dev/api?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=mp3"
+
+# 3. Resolve MP4 Video Stream
+curl -s -H "x-api-key: lily_api_key_example" \
+  "https://lily-api.example.workers.dev/api?url=dQw4w9WgXcQ&format=mp4"
 ```
 
 </details>
 
-<details open>
-<summary><b>2. Resolve Media — <code>GET /api</code></b></summary>
+<details>
+<summary><b>🐍 Python (Async Bot Integration with <code>httpx</code>)</b></summary>
 
-**Headers:** `x-api-key: your_secret_api_key_here` *(or `Authorization: Bearer your_secret_api_key_here`)*  
-**Parameters:**
-- `url` *(required)*: YouTube URL or 11-character Video ID
-- `format` *(optional)*: `mp3` *(default)* or `mp4`
+```python
+import httpx
 
-```bash
-curl -s -H "x-api-key: your_secret_api_key_here" \
-  "https://your-worker.your-subdomain.workers.dev/api?url=dQw4w9WgXcQ&format=mp3"
+LILY_API_URL = "https://lily-api.example.workers.dev"
+LILY_API_KEY = "lily_api_key_example"
+
+async def get_lily_stream(video_url: str, fmt: str = "mp3") -> dict:
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.get(
+            f"{LILY_API_URL}/api",
+            params={"url": video_url, "format": fmt},
+            headers={"x-api-key": LILY_API_KEY},
+        )
+        resp.raise_for_status()
+        return resp.json()
 ```
 
+</details>
+
+<details>
+<summary><b>🟨 JavaScript / Node.js (<code>fetch</code>)</b></summary>
+
+```javascript
+const LILY_API_URL = "https://lily-api.example.workers.dev";
+const LILY_API_KEY = "lily_api_key_example";
+
+const res = await fetch(
+  `${LILY_API_URL}/api?url=${encodeURIComponent("dQw4w9WgXcQ")}&format=mp3`,
+  {
+    headers: { "x-api-key": LILY_API_KEY }
+  }
+);
+const data = await res.json();
+console.log(data.title, data.directDownloadUrl);
+```
+
+</details>
+
+<details>
+<summary><b>📦 Sample Success & Error Responses</b></summary>
+
+#### ✅ `200 OK` Success Payload
 ```json
 {
   "success": true,
-  "title": "Track Title",
+  "title": "Sample Track Title",
   "fileSize": 3449447,
   "fileSizeText": "3.29 MB",
   "format": "mp3",
+  "fullFormat": "mp3",
   "videoId": "dQw4w9WgXcQ",
-  "downloads": "https://your-worker.your-subdomain.workers.dev/api/file/vps/<token>.m4a",
-  "directDownloadUrl": "https://your-worker.your-subdomain.workers.dev/api/file/vps/<token>.m4a&redirect=1",
-  "directStreamUrl": "https://cdn-url/videoplayback?...",
+  "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "downloads": "https://lily-api.example.workers.dev/api/file/vps/<stream_token>.m4a?videoId=dQw4w9WgXcQ",
+  "directDownloadUrl": "https://lily-api.example.workers.dev/api/file/vps/<stream_token>.m4a?videoId=dQw4w9WgXcQ&redirect=1",
+  "directStreamUrl": "https://cdn-edge/videoplayback?...&ratebypass=yes",
   "mimeType": "audio/mp4",
   "fileExtension": "m4a",
   "audioIncluded": true,
-  "videoIncluded": false
+  "videoIncluded": false,
+  "provider": "vps"
 }
 ```
 
-</details>
-
-<details>
-<summary><b>3. Unlocking Age-Restricted Videos</b></summary>
-
-> [!TIP]
-> Never upload `cookies.txt` to public repositories! It is already blocked by [`.gitignore`](.gitignore).
-
-- **Cloudflare Worker:** Upload your session cookie string securely via `npx wrangler secret put YOUTUBE_COOKIE`.
-- **FastAPI Backend:** Place your Netscape format `cookies.txt` in the project root directory; [`main.py`](main.py) detects and loads it automatically.
+#### ❌ Error Codes Explorer
+| Status | Error `code` | Meaning |
+| :---: | :--- | :--- |
+| `401` | `authentication_required` | Missing or incorrect `x-api-key` / `Authorization: Bearer` / `api_key` |
+| `400` | `invalid_input` | Missing `url` parameter or invalid YouTube URL / Video ID |
+| `400` | `invalid_format` | `format` must be either `mp3` or `mp4` |
+| `404` | `not_found` | Invalid route requested |
+| `500` / `502` | `extraction_failed` / `upstream_timeout` | Upstream provider timed out or stream unavailable |
 
 </details>
 
 <details>
-<summary><b>4. Automated Verification Suite</b></summary>
+<summary><b>🧪 Run Automated Test Suite</b></summary>
 
-Run the test script against your deployment without storing credentials in files:
+Verify all 5 API checks (health, auth rejection, format validation, stream extraction, and HTTP 206 byte-range playback):
 
 ```bash
-python3 test_api.py "https://your-worker.your-subdomain.workers.dev" "your_secret_api_key_here"
+python3 test_api.py "https://lily-api.example.workers.dev" "lily_api_key_example"
 ```
+
+</details>
+
+---
+
+## ❓ FAQ & Troubleshooting
+
+<details>
+<summary><b>🔞 How do I unlock 18+ age-restricted videos?</b></summary>
+
+- **Cloudflare Worker:** Export your YouTube cookies, filter the core session tokens, and store them as a Worker secret:
+  ```bash
+  npx wrangler secret put YOUTUBE_COOKIE
+  ```
+- **Python FastAPI:** Place your Netscape `cookies.txt` file in the root directory (it is already ignored in [`.gitignore`](.gitignore)). [`main.py`](main.py) automatically passes it to `yt-dlp`.
+
+</details>
+
+<details>
+<summary><b>⚡ How do I get maximum download speed (40–100+ MB/s)?</b></summary>
+
+Use the **`directDownloadUrl`** field (which appends `&redirect=1`) or fetch **`directStreamUrl`** directly. This issues a `302` redirect straight to Google's CDN with `ratebypass=yes`, avoiding proxy overhead.
+
+</details>
+
+<details>
+<summary><b>🔐 How do I rotate or change my Lily-Api key?</b></summary>
+
+Run `npx wrangler secret put API_KEY` (or update `API_KEY` in Cloudflare Dashboard → **Settings** → **Variables and Secrets**), then update `WORKER_FALLBACK_API_KEY` in your bot's `.env`.
 
 </details>
 
@@ -245,14 +356,18 @@ python3 test_api.py "https://your-worker.your-subdomain.workers.dev" "your_secre
 
 <div align="center">
 
-Need help setting up, scaling, or customizing **Lily-Api**? Reach out directly on Telegram!
+Have questions, custom feature requests, or need setup help? Message the owner directly on Telegram!
 
 <a href="https://t.me/advaydev">
-  <img src="https://img.shields.io/badge/💬%20Chat%20with%20Owner-t.me%2Fadvaydev-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Contact Owner on Telegram" />
+  <img src="https://img.shields.io/badge/💬%20Telegram%20Owner-t.me%2Fadvaydev-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="t.me/advaydev" />
 </a>
 
 <br/><br/>
 
-<sub>Built with ⚡ Edge Computing & ❤️ by <a href="https://t.me/advaydev">@advaydev</a></sub>
+<b>🔗 Direct Link:</b> <a href="https://t.me/advaydev">https://t.me/advaydev</a>
+
+<br/>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:26A5E4,50:9D4EDD,100:FF2E93&height=110&section=footer&text=Made%20with%20%E2%9A%A1%20by%20%40advaydev&fontSize=18&fontColor=ffffff&fontAlignY=65" width="100%" alt="Lily-Api Footer" />
 
 </div>
