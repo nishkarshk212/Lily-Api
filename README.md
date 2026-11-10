@@ -1,7 +1,9 @@
 <div align="center">
 
-<!-- Animated Gradient Wave Hero Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF2E93,50:9D4EDD,100:26A5E4&height=210&section=header&text=%F0%9F%8C%B8%20Lily-Api&fontSize=68&fontColor=ffffff&fontAlignY=38&desc=Ultra-Fast%20Edge%20YouTube%20Audio%20%26%20Video%20Stream%20Resolver&descSize=18&descAlignY=62&animation=fadeIn" width="100%" alt="Lily-Api Banner" />
+<!-- Animated Gradient Wave Hero Banner (Self-Hosted SVG) -->
+<a href="https://t.me/advaydev">
+  <img src="assets/banner.svg" width="100%" alt="Lily-Api Banner" />
+</a>
 
 <!-- Animated Typing Tagline -->
 <a href="https://t.me/advaydev">
@@ -368,6 +370,8 @@ Have questions, custom feature requests, or need setup help? Message the owner d
 
 <br/>
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:26A5E4,50:9D4EDD,100:FF2E93&height=110&section=footer&text=Made%20with%20%E2%9A%A1%20by%20%40advaydev&fontSize=18&fontColor=ffffff&fontAlignY=65" width="100%" alt="Lily-Api Footer" />
+<a href="https://t.me/advaydev">
+  <img src="assets/footer.svg" width="100%" alt="Lily-Api Footer" />
+</a>
 
 </div>
