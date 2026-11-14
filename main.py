@@ -123,6 +123,7 @@ async def resolve_media(
     id: Optional[str] = Query(None),
     videoId: Optional[str] = Query(None),
     format: str = Query("mp3"),
+    quality: str = Query("best"),
     x_api_key: Optional[str] = Header(None, alias="x-api-key"),
     authorization: Optional[str] = Header(None),
     api_key: Optional[str] = Query(None),
@@ -160,6 +161,7 @@ async def resolve_media(
     # 2. Extract parameters
     target_url = url or id or videoId or body_data.get("url") or body_data.get("id") or body_data.get("videoId")
     req_format = body_data.get("format", format).lower()
+    req_quality = body_data.get("quality", quality).lower()
 
     if not target_url or not str(target_url).strip():
         return JSONResponse(
@@ -210,6 +212,13 @@ async def resolve_media(
     file_ext = "m4a" if req_format == "mp3" else "mp4"
     mime_type = "audio/mp4" if req_format == "mp3" else "video/mp4"
     failure_reason = None
+    quality_label = None
+    resolution = None
+    width = None
+    height = None
+    fps = None
+    bitrate = None
+    available_qualities = []
 
     # Extraction Engine 1: yt-dlp (if installed)
     try:
@@ -230,7 +239,7 @@ async def resolve_media(
             },
             "format": "bestaudio[ext=m4a]/bestaudio/best"
             if req_format == "mp3"
-            else "best[ext=mp4]/best",
+            else "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
         }
         if cookie_file:
             ydl_opts["cookiefile"] = cookie_file
@@ -243,6 +252,12 @@ async def resolve_media(
                 or info.get("filesize_approx")
                 or (info.get("duration", 200) * 16000)
             )
+            width = info.get("width")
+            height = info.get("height")
+            fps = info.get("fps")
+            bitrate = info.get("tbr") or info.get("vbr") or info.get("abr")
+            quality_label = f"{height}p" if height else "HD"
+            resolution = f"{width}x{height}" if width and height else None
             if req_format == "mp3":
                 file_ext = info.get("ext", "m4a")
                 mime_type = "audio/mp4" if file_ext == "m4a" else "audio/mpeg"
@@ -284,22 +299,43 @@ async def resolve_media(
                         if p_status and p_status != "OK" and p_reason:
                             failure_reason = p_reason
                     duration = int(yt_data.get("videoDetails", {}).get("lengthSeconds", 200))
-                    formats = yt_data.get("streamingData", {}).get("adaptiveFormats", [])
+                    formats = [
+                        *(yt_data.get("streamingData", {}).get("adaptiveFormats", [])),
+                        *(yt_data.get("streamingData", {}).get("formats", []))
+                    ]
                     if req_format == "mp4":
-                        v_fmt = next((f for f in formats if "video/mp4" in f.get("mimeType", "") and f.get("url")), None)
-                        if v_fmt:
-                            raw_stream_url = v_fmt["url"]
+                        video_fmts = [f for f in formats if "video" in f.get("mimeType", "") and f.get("url")]
+                        video_fmts.sort(key=lambda x: (x.get("height", 0), x.get("bitrate", 0)), reverse=True)
+                        available_qualities = list(dict.fromkeys([f.get("qualityLabel") or f"{f.get('height')}p" for f in video_fmts if f.get("qualityLabel") or f.get("height")]))
+                        chosen_v = None
+                        if req_quality and req_quality != "best":
+                            q_clean = re.sub(r"[^0-9]", "", req_quality)
+                            if q_clean:
+                                chosen_v = next((f for f in video_fmts if str(f.get("height")) == q_clean or q_clean in (f.get("qualityLabel") or "")), None)
+                        if not chosen_v and video_fmts:
+                            chosen_v = video_fmts[0]
+                        if chosen_v:
+                            raw_stream_url = chosen_v["url"]
                             file_ext = "mp4"
-                            mime_type = "video/mp4"
-                            file_size = int(v_fmt.get("contentLength") or (duration * 125000))
+                            mime_type = chosen_v.get("mimeType", "video/mp4").split(";")[0]
+                            quality_label = chosen_v.get("qualityLabel") or (f"{chosen_v.get('height')}p" if chosen_v.get("height") else "HD")
+                            resolution = f"{chosen_v.get('width')}x{chosen_v.get('height')}" if chosen_v.get("width") and chosen_v.get("height") else None
+                            width = chosen_v.get("width")
+                            height = chosen_v.get("height")
+                            fps = chosen_v.get("fps")
+                            bitrate = chosen_v.get("bitrate")
+                            file_size = int(chosen_v.get("contentLength") or (duration * (bitrate // 8 if bitrate else 150000)))
                     else:
-                        a_fmt = next((f for f in formats if "audio/mp4" in f.get("mimeType", "") and f.get("url")), None) or \
-                                next((f for f in formats if "audio" in f.get("mimeType", "") and f.get("url")), None)
-                        if a_fmt:
-                            raw_stream_url = a_fmt["url"]
-                            file_ext = "m4a"
-                            mime_type = a_fmt.get("mimeType", "audio/mp4").split(";")[0]
-                            file_size = int(a_fmt.get("contentLength") or (duration * 16000))
+                        audio_fmts = [f for f in formats if "audio" in f.get("mimeType", "") and f.get("url")]
+                        audio_fmts.sort(key=lambda x: (x.get("bitrate", 0), x.get("audioBitrate", 0)), reverse=True)
+                        if audio_fmts:
+                            chosen_a = audio_fmts[0]
+                            raw_stream_url = chosen_a["url"]
+                            file_ext = "m4a" if "mp4" in chosen_a.get("mimeType", "") else "opus"
+                            mime_type = chosen_a.get("mimeType", "audio/mp4").split(";")[0]
+                            bitrate = chosen_a.get("bitrate")
+                            quality_label = "high"
+                            file_size = int(chosen_a.get("contentLength") or (duration * (bitrate // 8 if bitrate else 16000)))
         except Exception as e:
             print(f"InnerTube extraction error: {e}")
 
@@ -324,21 +360,29 @@ async def resolve_media(
                         duration = data.get("lengthSeconds", 200)
                         adaptive = data.get("adaptiveFormats", [])
                         if req_format == "mp4":
-                            stream = next((s for s in adaptive if "video/mp4" in s.get("type", "") and s.get("url")), None)
-                            if stream:
-                                raw_stream_url = stream.get("url")
+                            v_streams = [s for s in adaptive if "video" in s.get("type", "") and s.get("url")]
+                            v_streams.sort(key=lambda x: (x.get("height", 0), x.get("bitrate", 0)), reverse=True)
+                            if v_streams:
+                                s = v_streams[0]
+                                raw_stream_url = s.get("url")
                                 file_ext = "mp4"
                                 mime_type = "video/mp4"
-                                file_size = stream.get("clen") or (duration * 125000)
+                                quality_label = s.get("qualityLabel") or (f"{s.get('height')}p" if s.get("height") else "HD")
+                                resolution = f"{s.get('width')}x{s.get('height')}" if s.get("width") and s.get("height") else None
+                                width = s.get("width")
+                                height = s.get("height")
+                                file_size = s.get("clen") or (duration * 125000)
                                 break
                         else:
-                            stream = next((s for s in adaptive if "audio/mp4" in s.get("type", "") and s.get("url")), None) or \
-                                     next((s for s in adaptive if "audio" in s.get("type", "") and s.get("url")), None)
-                            if stream:
-                                raw_stream_url = stream.get("url")
+                            a_streams = [s for s in adaptive if "audio" in s.get("type", "") and s.get("url")]
+                            a_streams.sort(key=lambda x: x.get("bitrate", 0), reverse=True)
+                            if a_streams:
+                                s = a_streams[0]
+                                raw_stream_url = s.get("url")
                                 file_ext = "m4a"
-                                mime_type = stream.get("type", "audio/mp4").split(";")[0]
-                                file_size = stream.get("clen") or (duration * 16000)
+                                mime_type = s.get("type", "audio/mp4").split(";")[0]
+                                quality_label = "high"
+                                file_size = s.get("clen") or (duration * 16000)
                                 break
                 except Exception:
                     continue
@@ -403,6 +447,14 @@ async def resolve_media(
         "download_mime_type": mime_type,
         "fileExtension": file_ext,
         "file_extension": file_ext,
+        "quality": quality_label or ("1080p" if req_format == "mp4" else "high"),
+        "qualityLabel": quality_label or ("1080p" if req_format == "mp4" else "high"),
+        "resolution": resolution,
+        "width": width,
+        "height": height,
+        "fps": fps,
+        "bitrate": bitrate,
+        "availableQualities": available_qualities,
         "audioIncluded": True,
         "videoIncluded": (req_format == "mp4"),
         "provider": "vps",

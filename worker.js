@@ -114,6 +114,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
   // Get parameters
   let targetUrl = url.searchParams.get("url") || url.searchParams.get("id") || url.searchParams.get("videoId") || body?.url || body?.id || body?.videoId;
   let format = (url.searchParams.get("format") || body?.format || "mp3").toLowerCase();
+  let quality = (url.searchParams.get("quality") || url.searchParams.get("q") || body?.quality || "best").toLowerCase();
 
   // Validate URL input
   if (!targetUrl || typeof targetUrl !== "string" || targetUrl.trim() === "") {
@@ -153,7 +154,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
   }
 
   const origin = `${url.protocol}//${url.host}`;
-  const cacheKey = new Request(`${origin}/__cache_api__/${videoId}/${format}`);
+  const cacheKey = new Request(`${origin}/__cache_api__/${videoId}/${format}/${quality}`);
   const cache = caches.default;
 
   // Check Cloudflare Edge Cache for sub-20ms instant responses
@@ -177,7 +178,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
         const upstreamKey = config.UPSTREAM_API_KEY || config.API_KEY;
 
         const upstreamResp = await fetch(
-          `${cleanUpstream}/api?url=${encodeURIComponent(targetUrl)}&format=${format}`,
+          `${cleanUpstream}/api?url=${encodeURIComponent(targetUrl)}&format=${format}&quality=${encodeURIComponent(quality)}`,
           {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -238,7 +239,7 @@ async function handleApiResolve(request, url, config, corsHeaders, ctx) {
     }
 
     // Strategy 2: Multi-resolver fallback on Edge
-    const result = await resolveYouTubeMedia(videoId, format, origin, config);
+    const result = await resolveYouTubeMedia(videoId, format, quality, origin, config);
 
     // Cache at Edge for 2 hours (7200 seconds)
     try {
@@ -374,14 +375,21 @@ function decodeBase64Url(base64) {
 /**
  * Core Resolver: Queries YouTube InnerTube / Invidious fallback instances
  */
-async function resolveYouTubeMedia(videoId, format, origin, config) {
-  let title = "YouTube Audio Track";
+async function resolveYouTubeMedia(videoId, format, quality = "best", origin, config) {
+  let title = "YouTube Media Track";
   let duration = 200;
   let rawStreamUrl = null;
   let fileSize = 3500000;
   let mimeType = format === "mp4" ? "video/mp4" : "audio/mp4";
   let fileExtension = format === "mp4" ? "mp4" : "m4a";
   let failureReason = null;
+  let qualityLabel = null;
+  let resolution = null;
+  let width = null;
+  let height = null;
+  let fps = null;
+  let bitrate = null;
+  let availableQualities = [];
 
   // 1. Fetch metadata & title from YouTube oEmbed
   try {
@@ -459,24 +467,58 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
           }
         }
 
-        const formats = ytData.streamingData?.adaptiveFormats || ytData.streamingData?.formats || [];
+        const formats = [
+          ...(ytData.streamingData?.adaptiveFormats || []),
+          ...(ytData.streamingData?.formats || [])
+        ];
+
         if (format === "mp4") {
-          const videoFmt = formats.find(f => f.mimeType && f.mimeType.includes("video/mp4") && f.url);
-          if (videoFmt) {
-            rawStreamUrl = videoFmt.url;
-            mimeType = "video/mp4";
+          // Filter video formats with direct URLs (prioritize mp4, allow webm fallback)
+          const videoFormats = formats.filter(f => f.mimeType && (f.mimeType.includes("video/mp4") || f.mimeType.includes("video")) && f.url);
+          // Sort by resolution (height) descending, then bitrate descending for maximum video quality
+          videoFormats.sort((a, b) => (b.height || 0) - (a.height || 0) || (b.bitrate || 0) - (a.bitrate || 0));
+
+          availableQualities = Array.from(new Set(videoFormats.map(f => f.qualityLabel || (f.height ? `${f.height}p` : null)).filter(Boolean)));
+
+          let chosenFmt = null;
+          if (quality && quality !== "best") {
+            const qClean = quality.replace(/[^0-9]/g, "");
+            if (qClean) {
+              chosenFmt = videoFormats.find(f => (f.height && String(f.height) === qClean) || (f.qualityLabel && f.qualityLabel.includes(qClean)));
+            }
+          }
+          if (!chosenFmt && videoFormats.length > 0) {
+            // Pick highest quality available (1080p / 1440p / 2160p / 720p)
+            chosenFmt = videoFormats[0];
+          }
+
+          if (chosenFmt) {
+            rawStreamUrl = chosenFmt.url;
+            mimeType = chosenFmt.mimeType.split(";")[0];
             fileExtension = "mp4";
-            fileSize = parseInt(videoFmt.contentLength || (duration * 125000), 10);
+            qualityLabel = chosenFmt.qualityLabel || (chosenFmt.height ? `${chosenFmt.height}p` : "HD");
+            resolution = chosenFmt.width && chosenFmt.height ? `${chosenFmt.width}x${chosenFmt.height}` : null;
+            width = chosenFmt.width || null;
+            height = chosenFmt.height || null;
+            fps = chosenFmt.fps || null;
+            bitrate = chosenFmt.bitrate || null;
+            fileSize = parseInt(chosenFmt.contentLength || (duration * (chosenFmt.bitrate ? chosenFmt.bitrate / 8 : 150000)), 10);
             break;
           }
         } else {
-          const audioFmt = formats.find(f => f.mimeType && f.mimeType.includes("audio/mp4") && f.url) ||
-                           formats.find(f => f.mimeType && f.mimeType.includes("audio") && f.url);
-          if (audioFmt) {
-            rawStreamUrl = audioFmt.url;
-            mimeType = audioFmt.mimeType.split(";")[0];
-            fileExtension = "m4a";
-            fileSize = parseInt(audioFmt.contentLength || (duration * 16000), 10);
+          // Filter audio formats with direct URLs
+          const audioFormats = formats.filter(f => f.mimeType && f.mimeType.includes("audio") && f.url);
+          // Sort by bitrate descending for crystal clear high-fidelity audio
+          audioFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0) || (b.audioBitrate || 0) - (a.audioBitrate || 0));
+
+          const chosenAudio = audioFormats[0];
+          if (chosenAudio) {
+            rawStreamUrl = chosenAudio.url;
+            mimeType = chosenAudio.mimeType.split(";")[0];
+            fileExtension = chosenAudio.mimeType.includes("mp4") ? "m4a" : "opus";
+            bitrate = chosenAudio.bitrate || null;
+            qualityLabel = chosenAudio.audioQuality ? chosenAudio.audioQuality.replace("AUDIO_QUALITY_", "").toLowerCase() : "high";
+            fileSize = parseInt(chosenAudio.contentLength || (duration * (chosenAudio.bitrate ? chosenAudio.bitrate / 8 : 16000)), 10);
             break;
           }
         }
@@ -504,21 +546,32 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
           if (data.lengthSeconds) duration = data.lengthSeconds;
           const adaptive = data.adaptiveFormats || [];
           if (format === "mp4") {
-            const vStream = adaptive.find(s => s.type && s.type.includes("video/mp4") && s.url);
-            if (vStream) {
+            const vStreams = adaptive.filter(s => s.type && s.type.includes("video") && s.url);
+            vStreams.sort((a, b) => (b.height || 0) - (a.height || 0) || (b.bitrate || 0) - (a.bitrate || 0));
+            if (vStreams.length > 0) {
+              const vStream = vStreams[0];
               rawStreamUrl = vStream.url;
               mimeType = "video/mp4";
               fileExtension = "mp4";
+              qualityLabel = vStream.qualityLabel || (vStream.height ? `${vStream.height}p` : "HD");
+              resolution = vStream.width && vStream.height ? `${vStream.width}x${vStream.height}` : null;
+              width = vStream.width || null;
+              height = vStream.height || null;
+              fps = vStream.fps || null;
+              bitrate = vStream.bitrate || null;
               fileSize = parseInt(vStream.clen || (duration * 125000), 10);
               break;
             }
           } else {
-            const aStream = adaptive.find(s => s.type && s.type.includes("audio/mp4") && s.url) ||
-                            adaptive.find(s => s.type && s.type.includes("audio") && s.url);
-            if (aStream) {
+            const aStreams = adaptive.filter(s => s.type && s.type.includes("audio") && s.url);
+            aStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+            if (aStreams.length > 0) {
+              const aStream = aStreams[0];
               rawStreamUrl = aStream.url;
               mimeType = aStream.type.split(";")[0];
-              fileExtension = "m4a";
+              fileExtension = aStream.type.includes("mp4") ? "m4a" : "opus";
+              bitrate = aStream.bitrate || null;
+              qualityLabel = "high";
               fileSize = parseInt(aStream.clen || (duration * 16000), 10);
               break;
             }
@@ -581,6 +634,14 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
     download_mime_type: mimeType,
     fileExtension: fileExtension,
     file_extension: fileExtension,
+    quality: qualityLabel || (format === "mp4" ? "1080p" : "high"),
+    qualityLabel: qualityLabel || (format === "mp4" ? "1080p" : "high"),
+    resolution: resolution,
+    width: width,
+    height: height,
+    fps: fps,
+    bitrate: bitrate,
+    availableQualities: availableQualities,
     audioIncluded: true,
     videoIncluded: (format === "mp4"),
     provider: "vps",
