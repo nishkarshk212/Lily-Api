@@ -209,6 +209,7 @@ async def resolve_media(
     file_size = 3500000
     file_ext = "m4a" if req_format == "mp3" else "mp4"
     mime_type = "audio/mp4" if req_format == "mp3" else "video/mp4"
+    failure_reason = None
 
     # Extraction Engine 1: yt-dlp (if installed)
     try:
@@ -277,6 +278,11 @@ async def resolve_media(
                     yt_data = resp.json()
                     if yt_data.get("videoDetails", {}).get("title"):
                         title = yt_data["videoDetails"]["title"]
+                    if yt_data.get("playabilityStatus"):
+                        p_status = yt_data["playabilityStatus"].get("status")
+                        p_reason = yt_data["playabilityStatus"].get("reason")
+                        if p_status and p_status != "OK" and p_reason:
+                            failure_reason = p_reason
                     duration = int(yt_data.get("videoDetails", {}).get("lengthSeconds", 200))
                     formats = yt_data.get("streamingData", {}).get("adaptiveFormats", [])
                     if req_format == "mp4":
@@ -338,15 +344,21 @@ async def resolve_media(
                     continue
 
     if not raw_stream_url:
+        err_msg = "Upstream extraction failed or timed out"
+        if failure_reason:
+            if "age" in failure_reason.lower() or "sign in" in failure_reason.lower():
+                err_msg = f"Age-restricted content: {failure_reason}. Configure cookies.txt or YOUTUBE_COOKIE to enable playback."
+            else:
+                err_msg = failure_reason
         return JSONResponse(
             status_code=status.HTTP_502_BAD_GATEWAY,
             content={
                 "success": False,
                 "error": {
-                    "code": "upstream_timeout",
-                    "message": "Upstream extraction failed or timed out",
+                    "code": "upstream_timeout" if not failure_reason else "extraction_failed",
+                    "message": err_msg,
                 },
-                "code": "upstream_timeout",
+                "code": "upstream_timeout" if not failure_reason else "extraction_failed",
             },
         )
 

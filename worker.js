@@ -381,6 +381,7 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
   let fileSize = 3500000;
   let mimeType = format === "mp4" ? "video/mp4" : "audio/mp4";
   let fileExtension = format === "mp4" ? "mp4" : "m4a";
+  let failureReason = null;
 
   // 1. Fetch metadata & title from YouTube oEmbed
   try {
@@ -449,6 +450,14 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
         const ytData = await innerTubeResp.json();
         if (ytData.videoDetails?.title) title = ytData.videoDetails.title;
         if (ytData.videoDetails?.lengthSeconds) duration = parseInt(ytData.videoDetails.lengthSeconds, 10);
+
+        if (ytData.playabilityStatus) {
+          const pStatus = ytData.playabilityStatus.status;
+          const pReason = ytData.playabilityStatus.reason;
+          if (pStatus && pStatus !== "OK" && pReason) {
+            failureReason = pReason;
+          }
+        }
 
         const formats = ytData.streamingData?.adaptiveFormats || ytData.streamingData?.formats || [];
         if (format === "mp4") {
@@ -520,6 +529,12 @@ async function resolveYouTubeMedia(videoId, format, origin, config) {
   }
 
   if (!rawStreamUrl) {
+    if (failureReason) {
+      if (failureReason.toLowerCase().includes("age") || failureReason.toLowerCase().includes("sign in")) {
+        throw new Error(`Age-restricted content: ${failureReason}. Configure YOUTUBE_COOKIE in Cloudflare Worker secrets to enable playback.`);
+      }
+      throw new Error(failureReason);
+    }
     throw new Error("Unable to extract playback stream for this video. Please try again.");
   }
 
